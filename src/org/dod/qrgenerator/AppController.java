@@ -9,13 +9,18 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
+import javafx.stage.FileChooser;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -33,7 +38,13 @@ public class AppController implements Initializable {
     @FXML
     protected void handleConvert(ActionEvent event)
     {
-        if (txtURL.getText().isEmpty()) return;
+        if (txtURL.getText().isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setHeaderText("Empty URL");
+            alert.setContentText("Please input URL");
+            alert.showAndWait();
+            return;
+        }
         try {
             final BufferedImage bi = generateData(txtURL.getText());
             WritableImage img = SwingFXUtils.toFXImage(bi, null);
@@ -43,6 +54,49 @@ public class AppController implements Initializable {
         }catch (Exception ex)
         {
             ex.printStackTrace();
+        }
+    }
+
+    @FXML
+    protected void handleSaveAs(ActionEvent event)
+    {
+        if (imageView.getImage() == null) {
+            if (txtURL.getText().isEmpty()) {
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setHeaderText("No QR code generated");
+                alert.setContentText("Make sure you have generated a QR code before saving");
+                alert.showAndWait();
+                return;
+            }
+            return;
+        }
+
+        Button btn = (Button) event.getSource();
+
+        FileChooser chooser = new FileChooser();
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Image","*.png","*.jpg"));
+
+        File file = chooser.showSaveDialog(btn.getScene().getWindow());
+        if (file == null) {
+            return;
+        }
+
+        Alert alert;
+        try {
+            Image img = imageView.getImage();
+            BufferedImage bi = SwingFXUtils.fromFXImage(img, null);
+            if (file.getName().toLowerCase().endsWith("png")) {
+                ImageIO.write(bi, "png", file);
+            } else {
+                ImageIO.write(bi, "jpg", file);
+            }
+            alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setHeaderText("File saved!");
+            alert.showAndWait();
+        } catch (Exception ex) {
+            alert = new Alert(Alert.AlertType.ERROR);
+            alert.setHeaderText("Error saving image");
+            alert.showAndWait();
         }
     }
 
